@@ -1,39 +1,41 @@
-import sys
-import keyring
 import getpass
-import gkeepapi
 import json
+import sys
 
-DO_REAL_SYNC = False
+import gkeepapi
+import keyring
+
+DO_REAL_SYNC = False  # debugging tool, so i don't have to wait while it pulls down again.
 
 
 class ChoreMinder:
     def __init__(self):
         self.keep = get_api()
 
-        self.load_data()
+        self.sync_data(from_file=True)
 
         self.all_labels = self.get_labels()
         self.unlabeled = self.get_unlabeled()
 
     def main(self):
-        raise hell
+        raise hell  # force to debugger
 
-    def load_data(self):
+    def sync_data(self, from_file=False):
         print('Syncing...')
 
-        try:
-            with open('state', 'r') as f:
-                state = json.load(f)
-                self.keep.restore(state)
-        except FileNotFoundError:
-            print('no state to resume from')
-            pass
+        if from_file:
+            try:
+                with open('cache.json', 'r') as f:
+                    state = json.load(f)
+                    self.keep.restore(state)
+            except FileNotFoundError:
+                print('no cache to resume from')
+                pass
 
         if DO_REAL_SYNC:
             self.keep.sync()
 
-        with open('state', 'w') as f:
+        with open('cache.json', 'w') as f:
             json.dump(self.keep.dump(), f)
 
         print('Synced')
@@ -52,7 +54,7 @@ class ChoreMinder:
                 continue
 
             no_labels = len(note.labels) == 0
-            is_note = note.type.name == 'Note'
+            is_note = note.type.name == 'Note'  # excludes lists
 
             if no_labels and is_note:
                 unlabeled.append(note)
